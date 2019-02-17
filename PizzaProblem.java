@@ -23,12 +23,12 @@ public class PizzaProblem {
     private static Pizza pizza;
     private static Solution solution;
 
-    private static ArrayList<Slice> best;
+    private static SliceSolution best = new SliceSolution();
     private static int greatestArea = 0;
     private static HashMap<Slice, SliceSolution> data = new HashMap();
 
     public static void main(String[] args) throws FileNotFoundException {
-        String f = C;
+        String f = B;
         readInputFile(new File(f + ".in"));
         solution = new Solution(pizza);
 
@@ -58,8 +58,8 @@ public class PizzaProblem {
 
     public static void printOutput(OutputStream stream) {
         PrintWriter out = new PrintWriter(stream);
-        out.println(best.size());
-        for (Slice slice : best) {
+        out.println(best.slices.size());
+        for (Slice slice : best.slices) {
             out.printf("%d %d %d %d\n", slice.i1, slice.j1, slice.i2 - 1, slice.j2 - 1);
         }
 
@@ -71,52 +71,47 @@ public class PizzaProblem {
         ArrayList<Slice> slices = pizza.getSlices(0, 0);
         for (int i = 0; i < slices.size(); i++) {
             SliceSolution s = solve(slices.get(i));
-            System.out.println("Area = " + s.area);
-            System.out.println("Slices = " + s.slices.size());
+            if (s.area > best.area) {
+                best = s;
+            }
+            System.out.println(s.area);
         }
     }
 
     public static SliceSolution solve(Slice slice) {
         SliceSolution s = new SliceSolution();
-        s.area = 0;
+        if (data.containsKey(slice)) {
+            return data.get(slice);
+        }
         if (solution.canAddSlice(slice)) {
-            if (data.containsKey(slice)) {
-                s = data.get(slice);
-            } else {
-                solution.add(slice);
-
-                s.area = slice.numCells;
-                s.slices.add(slice);
-
-                int bottomArea = 0;
-                ArrayList<Slice> ba = new ArrayList();
-                for (Slice bottom : pizza.getSlices(slice.getBottomLeft())) {
-                    SliceSolution sb = solve(bottom);
-                    if (sb.area > bottomArea) {
-                        bottomArea = sb.area;
-                        ba = new ArrayList(sb.slices);
-                    }
+            solution.add(slice);
+            s.slices.add(slice);
+            s.area = slice.numCells;
+            int bottomArea = 0;
+            ArrayList<Slice> ba = new ArrayList();
+            for (Slice bottom : pizza.getSlices(slice.getBottomLeft())) {
+                SliceSolution sb = solve(bottom);
+                if (sb.area > bottomArea) {
+                    bottomArea = sb.area;
+                    ba = new ArrayList(sb.slices);
                 }
-                int topArea = 0;
-                ArrayList<Slice> ta = new ArrayList();
-                for (Slice top : pizza.getSlices(slice.getTopRight())) {
-                    SliceSolution st = solve(top);
-                    if (st.area > topArea) {
-                        topArea = st.area;
-                        ta = new ArrayList(st.slices);
-                    }
-                }
-                if (solution.getArea() > greatestArea) {
-                    best = solution.getSlices();
-                    greatestArea = solution.getArea();
-                }
-                s.area += topArea + bottomArea;
-                s.slices.addAll(ta);
-                s.slices.addAll(ba);
-
-                data.put(slice, s);
-                solution.remove(slice);
             }
+            int topArea = 0;
+            ArrayList<Slice> ta = new ArrayList();
+            for (Slice top : pizza.getSlices(slice.getTopRight())) {
+                SliceSolution st = solve(top);
+                if (st.area > topArea) {
+                    topArea = st.area;
+                    ta = new ArrayList(st.slices);
+                }
+            }
+            s.area += topArea + bottomArea;
+            System.out.println(s.area);
+            s.slices.addAll(ta);
+            s.slices.addAll(ba);
+            solution.remove(slice);
+
+            data.put(slice, s);
         }
         return s;
     }

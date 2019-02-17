@@ -1,5 +1,7 @@
 package pizzaproblem;
 
+import java.util.ArrayList;
+
 /**
  *
  * @author
@@ -19,6 +21,8 @@ public class Slice implements Comparable<Slice> {
 
     public int numMushrooms;
     public int numTomatoes;
+
+    public ArrayList<Slice> path = new ArrayList();
 
     public Slice(Pizza pizza) {
         this.pizza = pizza;
@@ -56,7 +60,7 @@ public class Slice implements Comparable<Slice> {
     @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
-        b.append("─────────────────────────────────────────\n");
+        b.append("─────────────────\n");
         for (int a = 0; a < 8; a++) {
             b.append(' ');
         }
@@ -100,7 +104,7 @@ public class Slice implements Comparable<Slice> {
             }
         }
         b.append("\nRows: ").append(rows).append(" Cols: ").append(cols);
-        b.append("\n─────────────────────────────────────────");
+        b.append("\n─────────────────");
         return "\n" + b.toString() + "\n";
     }
 
