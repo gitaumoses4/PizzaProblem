@@ -96,9 +96,14 @@ public class Pizza {
         return (i * (Math.max(rows, cols))) + j;
     }
 
+    public ArrayList<Slice> getSlices(Point point) {
+        return getSlices(point.i, point.j);
+    }
+
     public ArrayList<Slice> getSlices(int i, int j) {
         int index = this.calculateIndex(i, j);
-        return new ArrayList(slices.get(index));
+        ArrayList<Slice> a = slices.get(index);
+        return a == null ? new ArrayList() : new ArrayList(a);
     }
 
     @Override

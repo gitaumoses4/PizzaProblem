@@ -3,24 +3,32 @@ package pizzaproblem;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Scanner;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class PizzaProblem {
 
-    private static final File A = new File("a_example.in");
-    private static final File B = new File("b_small.in");
-    private static final File C = new File("c_medium.in");
-    private static final File D = new File("d_big.in");
+    private static final String A = "a_example";
+    private static final String B = "b_small";
+    private static final String C = "c_medium";
+    private static final String D = "d_big";
 
     private static Pizza pizza;
-    private static char[][] solution;
+    private static Solution solution;
 
-    public static void main(String[] args) {
-        readInputFile(A);
-        solution = new char[pizza.rows][pizza.cols];
+    private static ArrayList<Slice> best;
+    private static int greatestArea = 0;
+
+    public static void main(String[] args) throws FileNotFoundException {
+        String f = B;
+        readInputFile(new File(f + ".in"));
+        solution = new Solution(pizza);
 
         System.out.println(pizza.maxCellsPerSlice);
         for (int i = 0; i < pizza.rows; i++) {
@@ -40,91 +48,45 @@ public class PizzaProblem {
 //        System.out.println(pizza.slices);
 
         solve();
-        printResult();
+        System.out.println(greatestArea);
+        printOutput(System.out);
+
+        printOutput(new FileOutputStream(new File(f + ".txt")));
     }
 
-    private static void clear() {
-        solution = new char[pizza.rows][pizza.cols];
+    public static void printOutput(OutputStream stream) {
+        PrintWriter out = new PrintWriter(stream);
+        out.println(best.size());
+        for (Slice slice : best) {
+            out.printf("%d %d %d %d\n", slice.i1, slice.j1, slice.i2 - 1, slice.j2 - 1);
+        }
+
+        out.flush();
+        out.close();
     }
 
     public static void solve() {
-        solve(new Point(0, 0), 0);
-    }
-
-    public static void placeSlice(Slice slice) {
-        for (int i = slice.i1; i < slice.i2; i++) {
-            for (int j = slice.j1; j < slice.j2; j++) {
-                solution[i][j] = slice.cells[i - slice.i1][j - slice.j1];
-            }
+        ArrayList<Slice> slices = pizza.getSlices(0, 0);
+        for (int i = 0; i < slices.size(); i++) {
+            System.out.printf("%d out of %d\n", i, slices.size());
+            solve(slices.get(i));
         }
     }
 
-    public static void removeSlice(Slice slice) {
-        for (int i = slice.i1; i < slice.i2; i++) {
-            for (int j = slice.j1; j < slice.j2; j++) {
-                solution[i][j] = '\0';
+    public static void solve(Slice slice) {
+        if (solution.canAddSlice(slice)) {
+            solution.add(slice);
+            for (Slice bottom : pizza.getSlices(slice.getBottomLeft())) {
+                solve(bottom);
             }
-        }
-    }
-
-    public static boolean overlaps(Slice slice) {
-        for (int i = slice.i1; i < slice.i2; i++) {
-            for (int j = slice.j1; j < slice.j2; j++) {
-                if (solution[i][j] == Pizza.MUSHROOM
-                        || solution[i][j] == Pizza.TOMATO) {
-                    return true;
-                }
+            for (Slice top : pizza.getSlices(slice.getTopRight())) {
+                solve(top);
             }
-        }
-        return false;
-    }
-
-    public static boolean solve(Point point, int current) {
-        int numSlices = pizza.numSlices(point.i, point.j);
-        boolean bottom = false, right = false;
-        Slice slice = pizza.getSlice(point, current);
-        System.out.println(slice);
-        if (overlaps(slice)) {
-            if (current < numSlices - 1) {
-                return solve(point, current + 1);
-            } else {
-                return false;
+            if (solution.getArea() > greatestArea) {
+                best = solution.getSlices();
+                greatestArea = solution.getArea();
             }
-        }
-        placeSlice(slice);
-        if (slice.getBottomLeft().i < pizza.rows
-                && slice.getTopRight().j < pizza.cols) {
-            Slice bottomLeft = slice.getBottomLeftSlice();
-            Slice topRight = slice.getTopRightSlice();
-
-            if (bottomLeft != null) {
-                bottom = solve(bottomLeft.getPoint(), 0);
-            }
-            if (topRight != null) {
-                right = solve(topRight.getPoint(), 0);
-            }
-            if (bottom && right) {
-                return true;
-            } else {
-                if (current < numSlices - 1) {
-                    removeSlice(slice);
-                    return solve(point, current + 1);
-                } else {
-                    return false;
-                }
-            }
-        } else {
-            return true;
-        }
-    }
-
-    public static void printResult() {
-        for (int i = 0; i < pizza.rows; i++) {
-            for (int j = 0; j < pizza.cols; j++) {
-                char c = solution[i][j];
-                System.out.print(c);
-            }
-            System.out.println("");
+            solution.remove(slice);
         }
     }
 
